@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$MEMETD - Hacker Trading Game</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>$MEMETD - Hacker Trading Game</h1>
+
+    <!-- Balance Display -->
+    <div id="balance-container">
+      <h2>Balance: <span id="balance">$10000.00</span></h2>
+    </div>
+
+    <!-- Chart Section -->
+    <div id="chart-container">
+      <h2 id="chart-title">Price Chart</h2>
+      <canvas id="coinChart"></canvas>
+    </div>
+
+    <!-- Market, Trade, and Positions Section -->
+    <div class="market-trade-container">
+      <div id="market">
+        <h2>Market</h2>
+        <div id="coin-list" class="coin-list">
+          <!-- Coin list will populate here -->
+        </div>
+      </div>
+
+      <div id="trade">
+        <h2>Trade</h2>
+        <label for="amount">Amount in $:</label>
+        <input type="number" id="amount" min="1" placeholder="Enter amount in dollars">
+        <div class="trade-buttons">
+          <button id="buy-button">Buy</button>
+          <button id="sell-button">Sell</button>
+          <button id="max-sell-button">Max Sell</button>
+        </div>
+      </div>
+
+      <div id="positions">
+        <h2>Your Positions</h2>
+        <div id="position-list">
+          <!-- Open positions will populate here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown and Leaderboard Section -->
+    <div id="countdown">
+      <h3>Next Coin Launch In: <span id="timer">15s</span></h3>
+    </div>
+    
+    <div id="leaderboard">
+      <h2>Leaderboard</h2>
+      <ul id="leaderboard-list">
+        <!-- Leaderboard players will populate here -->
+      </ul>
+    </div>
+
+    <!-- Profit/Loss Chart Section -->
+    <div id="pl-chart-container">
+      <h2>Cumulative Profit/Loss Chart</h2>
+      <canvas id="plChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const coinList = document.getElementById("coin-list");
+      const coins = [
+        { name: "$MEMETD", price: 0.05, trend: 0.01 },
+        { name: "$NEW50", price: 0.1, trend: 0.02 },
+        { name: "$CRYPTOX", price: 0.25, trend: 0.015 }
+      ];
+      let selectedCoin = null;
+      let chart = null;
+      let chartData = {};
+
+      function renderCoins() {
+        coinList.innerHTML = coins.map(coin => `
+          <div class="coin-option-container">
+            <button class="coin-option" onclick="selectCoin('${coin.name}')">
+              <span>${coin.name}</span> - Price: $${coin.price.toFixed(4)}
+            </button>
+            <button class="info-button" onclick="viewCoinInfo('${coin.name}')">Info</button>
+          </div>
+        `).join("");
+      }
+
+      renderCoins();
+
+      window.selectCoin = function (coinName) {
+        selectedCoin = coins.find(coin => coin.name === coinName);
+        document.getElementById("chart-title").innerText = `${selectedCoin.name} Price Chart`;
+        if (!chartData[selectedCoin.name]) {
+          chartData[selectedCoin.name] = [];
+        }
+        setupChart();
+      };
+
+      function setupChart() {
+        if (chart) chart.destroy();
+        const ctx = document.getElementById("coinChart").getContext("2d");
+        chart = new Chart(ctx, {
+          type: 'bar', // Use bar chart to resemble trading bars
+          data: {
+            labels: Array.from({ length: chartData[selectedCoin.name].length }, (_, i) => i + 1),
+            datasets: [{
+              label: `${selectedCoin.name} Price`,
+              data: chartData[selectedCoin.name],
+              backgroundColor: '#00ff00',
+              barPercentage: 0.6, // Reduce the width of the bars
+              categoryPercentage: 0.7, // Reduce the spacing between bars
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false, // Disable animation to make updates immediate
+            scales: {
+              x: {
+                display: true,
+                color: '#00ff00'
+              },
+              y: {
+                beginAtZero: false,
+                display: true,
+                color: '#00ff00'
+              }
+            }
+          }
+        });
+      }
+
+      function simulatePriceChange(currentPrice, trend) {
+        const isDip = Math.random() < 0.4; // 40% chance of a dip
+        let newPrice = currentPrice * (1 + (Math.random() - 0.25) * trend * 0.2 + (isDip ? -0.1 : 0.025)); // Increase dip magnitude to 10%
+        return Math.max(newPrice, 0.01);
+      }
+
+      setInterval(() => {
+        coins.forEach(coin => {
+          coin.price = simulatePriceChange(coin.price, coin.trend);
+          if (chartData[coin.name]) {
+            chartData[coin.name].push(coin.price);
+            if (chartData[coin.name].length > 20) {
+              chartData[coin.name].shift(); // Keep the last 20 points for the scrolling effect
+            }
+          }
+        });
+        if (selectedCoin) {
+          setupChart();
+        }
+      }, 500);
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
